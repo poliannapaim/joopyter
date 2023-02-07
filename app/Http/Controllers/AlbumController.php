@@ -21,7 +21,7 @@ class AlbumController extends Controller
      */
     public function index()
     {
-        return new AlbumCollection(Album::orderBy('release_date', 'asc')->paginate(20));
+        return AlbumResource::collection(Album::orderBy('release_date', 'DESC')->paginate(20));
     }
 
     /**
@@ -69,7 +69,7 @@ class AlbumController extends Controller
      */
     public function show($id)
     {
-        return new AlbumResource(Album::findOrFail($id));
+        return new AlbumResource(Album::findOrFail($id)->load('user')->load('tracks'));
     }
 
     /**

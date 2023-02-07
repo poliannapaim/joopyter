@@ -30,6 +30,6 @@ class Album extends Model
 
     public function tracks()
     {
-        return $this->hasMany(Track::class);
+        return $this->hasMany(Track::class)->orderBy('number', 'ASC');
     }
 }

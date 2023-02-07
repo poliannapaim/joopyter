@@ -20,13 +20,13 @@ class AlbumResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'artist' => (new ArtistResource($this->user)),
+            'artist' => (new ArtistResource($this->whenLoaded('user'))),
             'album' => [
                 'title' => $this->title,
                 'cover_pic' => $this->cover_pic,
                 'release_date' => Carbon::createFromFormat('Y-m-d', $this->release_date)->format('d/m/Y')
             ],
-            'tracks' => TrackResource::collection($this->tracks)->sortBy(['number', 'asc'])
+            'tracks' => TrackResource::collection($this->whenLoaded('tracks'))
         ];
     }
 }
