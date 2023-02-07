@@ -17,8 +17,13 @@ return new class extends Migration
             $table->id();
             $table->integer('number');
             $table->string('title');
-            $table->foreignId('album_id')->constrained();
+            $table->foreignId('album_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
+    }
+
+    public function down()
+    {
+        Schema::drop('tracks');
     }
 };
