@@ -58,5 +58,6 @@ Route::prefix('v1')->group(function () {
          */
         Route::post('albums/trashed', [AlbumController::class, 'trashed']);
         Route::post('albums/{id}/restore', [AlbumController::class, 'restore']);
+        Route::delete('albums/{id}/delete-permanently', [AlbumController::class, 'deletePermanently']);
     });
 });

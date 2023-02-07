@@ -175,4 +175,25 @@ class AlbumController extends Controller
             ]);
         }
     }
+
+    public function deletePermanently($id)
+    {
+        $album = Album::withTrashed()
+            ->where('id', $id)
+            ->first();
+
+        try
+        {
+            DB::transaction(function () use ($album)
+            {
+                $album->forceDelete();
+            });
+        }
+        catch (Exception $e)
+        {
+            return response()->json([
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }
