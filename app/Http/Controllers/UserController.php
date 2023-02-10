@@ -33,7 +33,7 @@ class UserController extends Controller
                 $user = User::create([
                     'name' => $inputs['name'],
                     'email' => $inputs['email'],
-                    'password' => Hash::make($inputs['email'])
+                    'password' => Hash::make($inputs['password'])
                 ]);
             });
         } catch (Exception $e)
@@ -168,20 +168,38 @@ class UserController extends Controller
             'password' => ['required'],
         ]);
 
-        $user = User::where('email', $credentials['email'])->firstOrFail();
+        
+        // $email = $credentials['email'];
+        // $password = Hash::make($credentials['password']);
 
-        if ($user || Hash::check($credentials['password'], $user->password)) {
-            Auth::guard('web')->login($user);
+        // dd($email, $password);
 
+        $user = User::where('email', '=', $credentials['email'])->first();
+        
+        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
             return response()->json([
                 'message' => 'User logged in.',
                 'token' => $user->createToken('joopyter-token')->plainTextToken
             ]);
         }
-
+        
         return response()->json([
             'message' => 'Invalid credentials to login.'
         ], 401);
+
+        // if (!$user || !Hash::check($credentials['password'], $user->password))
+        // {
+        //     return response()->json([
+        //         'message' => 'Invalid credentials to login.'
+        //     ], 401);
+        // }
+
+        // Auth::guard('web')->login($user);
+
+        // return response()->json([
+        //     'message' => 'User logged in.',
+        //     'token' => $user->createToken('joopyter-token')->plainTextToken
+        // ]);
     }
 
     /**
