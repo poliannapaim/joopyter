@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use Carbon\Carbon;
 use App\Models\Track;
 use App\Http\Resources\TrackResource;
 use App\Http\Resources\ArtistResource;
@@ -24,7 +23,7 @@ class AlbumResource extends JsonResource
             'album' => [
                 'title' => $this->title,
                 'cover_pic' => $this->cover_pic,
-                'release_date' => Carbon::createFromFormat('Y-m-d', $this->release_date)->format('d/m/Y')
+                'release_date' => $this->release_date
             ],
             'tracks' => TrackResource::collection($this->whenLoaded('tracks'))
         ];

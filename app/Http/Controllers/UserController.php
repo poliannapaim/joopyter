@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use Exception;
-use Carbon\Carbon;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -22,22 +24,20 @@ class UserController extends Controller
     public function store(Request $request)
     {        
         $inputs = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', 'min:8'],
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users',
+            'password' => 'required|confirmed|min:8',
         ]);
 
         try {
-            DB::transaction(function () use ($inputs)
-            {
-                $user = User::create([
+            DB::transaction(function () use ($inputs) {
+                User::create([
                     'name' => $inputs['name'],
                     'email' => $inputs['email'],
                     'password' => Hash::make($inputs['password'])
                 ]);
             });
-        } catch (Exception $e)
-        {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
@@ -65,66 +65,31 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $inputs = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'email', 'max:255', 'unique:users'],
-            'password' => ['sometimes', 'required', 'confirmed', 'min:8'],
-            'dob' => ['nullable', 'date_format:d/m/Y', 'max:10'],
-            'profile_pic' => ['nullable', 'image', 'dimensions:min_width=100,max_width=1000', 'mimes:jpeg,jpg,png', 'max:2048'],
-            'bio' => ['nullable', 'string', 'max:250'],
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($id)],
+            'dob' => 'nullable|date|max:10',
+            'bio' => 'nullable|string|max:250',
+            'base64_profile_pic' => 'nullable|base64image|base64dimensions:min_width=100,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
         ]);
+        $user = User::findOrFail($id);
 
-        try
-        {
-            DB::transaction(function () use ($id, $request, $inputs)
-            {
-                $user = User::find($id);
-
-                if(isset($inputs['name']))
-                {
-                    $user->name = $inputs['name'];
+        try {
+            DB::transaction(function () use ($inputs, $user) {
+                if (isset($inputs['base64_profile_pic'])) {
+                    $imageData = explode(',', $inputs['base64_profile_pic'])[1];
+                    $imageExtension = explode('/', mime_content_type($inputs['base64_profile_pic']))[1];
+                    $filename = 'profile_pictures/'.Str::random(10).'.'.$imageExtension;
+                    Storage::disk('public')->put($filename, base64_decode($imageData));
+                    $inputs['profile_pic'] = $filename;
                 }
-
-                if(isset($inputs['email']))
-                {
-                    $user->email = $inputs['email'];
-                }
-
-                if(isset($inputs['password']))
-                {
-                    $user->password = Hash::make($inputs['password']);
-                }
-
-                if(isset($inputs['dob']))
-                {
-                    $user->dob = Carbon::createFromFormat('d/m/Y', $inputs['dob'])->format('Y-m-d');
-                }
-
-                if(isset($inputs['profile_pic']))
-                {
-                    $file = $request->file('profile_pic');
-                    $extension = $file->getClientOriginalExtension();
-                    $filename = Str::random(64).time().'.'.$extension;
-                    $file->move('upload/users/', $filename);
-
-                    $user->profile_pic = $filename;
-                }
-
-                if(isset($inputs['bio']))
-                {
-                    $user->bio = $inputs['bio'];
-                }
-
-                $user->save();
+                $user->update($inputs);
             });
-
-            $user = User::where('id', $id)->firstOrFail();
 
             return response()->json([
                 'message' => 'User updated.',
                 'data' => $user
             ]);
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
@@ -142,8 +107,7 @@ class UserController extends Controller
         $user = User::find($id);
         
         try {
-            DB::transaction(function () use ($user)
-            {
+            DB::transaction(function () use ($user) {
                 $user->tokens()->delete();
                 $user->delete();
             });
@@ -164,42 +128,20 @@ class UserController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
 
-        
-        // $email = $credentials['email'];
-        // $password = Hash::make($credentials['password']);
-
-        // dd($email, $password);
-
-        $user = User::where('email', '=', $credentials['email'])->first();
-        
-        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
+        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password'], 'is_active' => 1])) {
             return response()->json([
                 'message' => 'User logged in.',
-                'token' => $user->createToken('joopyter-token')->plainTextToken
+                'token' => $request->user()->createToken('joopyter-token')->plainTextToken
             ]);
         }
-        
+
         return response()->json([
             'message' => 'Invalid credentials to login.'
         ], 401);
-
-        // if (!$user || !Hash::check($credentials['password'], $user->password))
-        // {
-        //     return response()->json([
-        //         'message' => 'Invalid credentials to login.'
-        //     ], 401);
-        // }
-
-        // Auth::guard('web')->login($user);
-
-        // return response()->json([
-        //     'message' => 'User logged in.',
-        //     'token' => $user->createToken('joopyter-token')->plainTextToken
-        // ]);
     }
 
     /**
@@ -211,8 +153,11 @@ class UserController extends Controller
 
     public function logout(Request $request)
     {
-        $user = Auth::user();
-        $user->tokens()->delete();
-        Auth::guard('web')->logout();
+        $request->user()->tokens()->delete();
+    }
+
+    public function user(Request $request)
+    {
+        return $request->user();
     }
 }

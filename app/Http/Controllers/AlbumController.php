@@ -3,14 +3,13 @@
 namespace App\Http\Controllers;
 
 use Exception;
-use Carbon\Carbon;
 use App\Models\Album;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\AlbumResource;
 use App\Http\Resources\AlbumCollection;
+use Illuminate\Support\Facades\Storage;
 
 class AlbumController extends Controller
 {
@@ -33,28 +32,26 @@ class AlbumController extends Controller
     public function store(Request $request)
     {
         $inputs = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'cover_pic' => ['required', 'image', 'dimensions:min_width=100,max_width=1000', 'mimes:jpeg,jpg,png', 'max:2048'],
-            'release_date' => ['required', 'date_format:d/m/Y', 'max:10'],
+            'title' => 'required|string|max:255',
+            'base64_cover_pic' => 'base64image|base64dimensions:min_width=100,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
+            'release_date' => 'required|date|max:10',
         ]);
         
-        try
-        {
-            DB::transaction(function () use ($request, $inputs)
-            {
-                $file = $request->file('cover_pic');
-                $extension = $file->getClientOriginalExtension();
-                $filename = Str::random(64).time().'.'.$extension;
-                $file->move('upload/albums/', $filename);
+        try {
+            DB::transaction(function () use ($inputs, $request) {
+                $imageData = explode(',', $inputs['base64_cover_pic'])[1];
+                $imageExtension = explode('/', mime_content_type($inputs['base64_cover_pic']))[1];
+                $filename = 'album_covers/'.Str::random(10).'.'.$imageExtension;
+                Storage::disk('public')->put($filename, base64_decode($imageData));
+                $inputs['cover_pic'] = $filename;
 
-                $album = Auth::user()->albums()->create([
+                $request->user()->albums()->create([
                     'title' => $inputs['title'],
                     'cover_pic' => $filename,
-                    'release_date' => Carbon::createFromFormat('d/m/Y', $inputs['release_date'])->format('Y-m-d')
+                    'release_date' => $inputs['release_date']
                 ]);
             });
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
@@ -82,42 +79,26 @@ class AlbumController extends Controller
     public function update(Request $request, $id)
     {
         $inputs = $request->validate([
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'cover_pic' => ['sometimes', 'required', 'image', 'dimensions:min_width=100,max_width=1000', 'mimes:jpeg,jpg,png', 'max:2048'],
-            'release_date' => ['sometimes', 'required', 'date_format:d/m/Y', 'max:10'],
+            'title' => 'required|string|max:255',
+            'base64_cover_pic' => 'base64image|base64dimensions:min_width=100,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
+            'release_date' => 'required|date|max:10',
         ]);
 
-        $album = Album::find($id);
+        $album = Album::findOrFail($id);
 
-        try
-        {
-            DB::transaction(function () use ($album, $request, $inputs)
-            {
-                if(isset($inputs['title']))
-                {
-                    $album->title = $inputs['title'];
+        try {
+            DB::transaction(function () use ($inputs, $album) {
+                if (isset($inputs['base64_cover_pic'])) {
+                    $imageData = explode(',', $inputs['base64_cover_pic'])[1];
+                    $imageExtension = explode('/', mime_content_type($inputs['base64_cover_pic']))[1];
+                    $filename = 'album_covers/'.Str::random(10).'.'.$imageExtension;
+                    Storage::disk('public')->put($filename, base64_decode($imageData));
+                    $inputs['cover_pic'] = $filename;
                 }
 
-                if(isset($inputs['cover_pic']))
-                {
-                    $file = $request->file('cover_pic');
-                    $extension = $file->getClientOriginalExtension();
-                    $filename = Str::random(64).time().'.'.$extension;
-                    $file->move('upload/albums/', $filename);
-
-                    $album->cover_pic = $filename;
-                }
-
-                if(isset($inputs['release_date']))
-                {
-                    $album->release_date = $inputs['release_date'];
-                }
-
-                $album->save();
+                $album->update($inputs);
             });
-        }
-        catch (Exception $e)
-        {   
+        } catch (Exception $e) {   
             return response()->json([
                 "message" => $e->getMessage()
             ]);
@@ -132,17 +113,13 @@ class AlbumController extends Controller
      */
     public function destroy($id)
     {
-        $album = Album::find($id);
+        $album = Album::findOrFail($id);
 
-        try
-        {
-            DB::transaction(function () use ($album)
-            {
+        try {
+            DB::transaction(function () use ($album) {
                 $album->delete();
             });
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
@@ -160,16 +137,14 @@ class AlbumController extends Controller
 
     public function restore($id)
     {
-        try
-        {
-            DB::transaction(function () use ($id){
+        try {
+            DB::transaction(function () use ($id) {
                 Album::withTrashed()
                     ->where('id', $id)
                     ->restore();
             });
         }
-        catch (Exception $e)
-        {
+        catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
@@ -182,15 +157,11 @@ class AlbumController extends Controller
             ->where('id', $id)
             ->first();
 
-        try
-        {
-            DB::transaction(function () use ($album)
-            {
+        try {
+            DB::transaction(function () use ($album) {
                 $album->forceDelete();
             });
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);

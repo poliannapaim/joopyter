@@ -20,7 +20,7 @@ use App\Http\Controllers\TrackController;
 /**
  * /api/v1
  */
-Route::prefix('v1')->group(function () {
+Route::prefix('v2')->group(function () {
     /**
      * authentication routes
      */
@@ -37,6 +37,7 @@ Route::prefix('v1')->group(function () {
          * user routes
          */
         Route::get('users/{id}', [UserController::class, 'show']);
+        Route::get('user', [UserController::class, 'user']);
         Route::put('users/{id}', [UserController::class, 'update']);
         Route::delete('users/{id}', [UserController::class, 'destroy']);
 

@@ -7,7 +7,6 @@ use App\Models\Album;
 use App\Models\Track;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\TrackResource;
 
 class TrackController extends Controller
@@ -21,27 +20,22 @@ class TrackController extends Controller
     public function store(Request $request, $album_id)
     {
         $inputs = $request->validate([
-            'number.*' => ['required', 'integer'],
-            'title.*' => ['required', 'string', 'max:255']
+            'number.*' => 'required|integer',
+            'title.*' => 'required|string|max:255',
         ]);
 
-        $album = Album::find($album_id);
+        $album = Album::findOrFail($album_id);
         
-        try
-        {
-            DB::transaction(function () use ($album, $inputs)
-            {
-                for($i = 0; $i < count($inputs['number']); $i++)
-                {
+        try {
+            DB::transaction(function () use ($inputs, $album) {
+                for($i = 0; $i < count($inputs['number']); $i++) {
                     $album->tracks()->create([
                         'number' => $inputs['number'][$i],
                         'title' => $inputs['title'][$i]
                     ]);
                 }
             });
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
@@ -69,31 +63,16 @@ class TrackController extends Controller
     public function update(Request $request, $album_id, $track_id)
     {
         $inputs = $request->validate([
-            'number' => ['sometimes', 'required', 'integer'],
-            'title' => ['sometimes', 'required', 'string', 'max:255']
+            'number' => '|required|integer',
+            'title' => '|required|string|max:255'
         ]);
-
-        $track = Track::find($track_id);
+        $track = Track::findOrFail($track_id);
         
-        try
-        {
-            DB::transaction(function () use ($track, $inputs)
-            {
-                if(isset($inputs['number']))
-                {
-                    $track->number = $inputs['number'];
-                }
-
-                if(isset($inputs['title']))
-                {
-                    $track->title = $inputs['title'];
-                }
-
-                $track->save();
+        try {
+            DB::transaction(function () use ($track, $inputs) {
+                $track->update($inputs);
             });
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
@@ -108,17 +87,13 @@ class TrackController extends Controller
      */
     public function destroy($album_id, $track_id)
     {
-        $track = Track::find($track_id);
+        $track = Track::findOrFail($track_id);
 
-        try
-        {
-            DB::transaction(function () use ($track)
-            {
+        try {
+            DB::transaction(function () use ($track) {
                 $track->delete();
             });
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
