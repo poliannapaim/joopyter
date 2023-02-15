@@ -97,7 +97,7 @@ class UserController extends Controller
     public function updateProfilePic(Request $request)
     {
         $input = $request->validate([
-            'base64_profile_pic' => 'required|base64image|base64dimensions:min_width=100,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
+            'base64_profile_pic' => 'required|base64image|base64dimensions:min_width=64,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
         ]);
         $user = User::findOrFail($request->user()->id);
         // dd($request);
