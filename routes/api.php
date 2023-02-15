@@ -36,10 +36,11 @@ Route::prefix('v2')->group(function () {
         /**
          * user routes
          */
-        Route::get('users/{id}', [UserController::class, 'show']);
         Route::get('user', [UserController::class, 'user']);
-        Route::put('users/{id}', [UserController::class, 'update']);
-        Route::delete('users/{id}', [UserController::class, 'destroy']);
+        Route::get('account', [UserController::class, 'show']);
+        Route::put('account/update', [UserController::class, 'update']);
+        Route::put('account/update-profile-pic', [UserController::class, 'updateProfilePic']);
+        Route::delete('account/delete', [UserController::class, 'destroy']);
 
         /**
          * album routes

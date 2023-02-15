@@ -44,15 +44,20 @@ class UserController extends Controller
         }
     }
 
+    public function user(Request $request)
+    {
+        return $request->user();
+    }
+
     /**
      * Display the specified resource.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Request $request)
     {
-        return new UserResource(User::findOrFail($id));
+        return new UserResource(User::findOrFail($request->user()->id));
     }
 
     /**
@@ -62,31 +67,53 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
+        $id = $request->user()->id;
         $inputs = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($id)],
             'dob' => 'nullable|date|max:10',
-            'bio' => 'nullable|string|max:250',
-            'base64_profile_pic' => 'nullable|base64image|base64dimensions:min_width=100,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
+            'bio' => 'nullable|string|max:250'
         ]);
         $user = User::findOrFail($id);
 
         try {
             DB::transaction(function () use ($inputs, $user) {
-                if (isset($inputs['base64_profile_pic'])) {
-                    $imageData = explode(',', $inputs['base64_profile_pic'])[1];
-                    $imageExtension = explode('/', mime_content_type($inputs['base64_profile_pic']))[1];
-                    $filename = 'profile_pictures/'.Str::random(10).'.'.$imageExtension;
-                    Storage::disk('public')->put($filename, base64_decode($imageData));
-                    $inputs['profile_pic'] = $filename;
-                }
                 $user->update($inputs);
             });
 
             return response()->json([
                 'message' => 'User updated.',
+                'data' => $user
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function updateProfilePic(Request $request)
+    {
+        $input = $request->validate([
+            'base64_profile_pic' => 'required|base64image|base64dimensions:min_width=100,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
+        ]);
+        $user = User::findOrFail($request->user()->id);
+        // dd($request);
+        try {
+            DB::transaction(function () use ($input, $user) {
+                $imageData = explode(',', $input['base64_profile_pic'])[1];
+                $imageExtension = explode('/', mime_content_type($input['base64_profile_pic']))[1];
+                $filename = 'profile_pictures/'.Str::random(10).'.'.$imageExtension;
+                Storage::disk('public')->put($filename, base64_decode($imageData));
+                $input['profile_pic'] = $filename;
+                
+                $user->update($input);
+            });
+
+            return response()->json([
+                'message' => 'Profile pic updated.',
                 'data' => $user
             ]);
         } catch (Exception $e) {
@@ -102,9 +129,9 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request)
     {
-        $user = User::find($id);
+        $user = User::findOrFail($request->user()->id);
         
         try {
             DB::transaction(function () use ($user) {
@@ -135,7 +162,7 @@ class UserController extends Controller
         if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password'], 'is_active' => 1])) {
             return response()->json([
                 'message' => 'User logged in.',
-                'token' => $request->user()->createToken('joopyter-token')->plainTextToken
+                'token' => $request->user()->createToken('auth-token')->plainTextToken
             ]);
         }
 
@@ -154,10 +181,5 @@ class UserController extends Controller
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
-    }
-
-    public function user(Request $request)
-    {
-        return $request->user();
     }
 }
