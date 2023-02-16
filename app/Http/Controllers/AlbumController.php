@@ -80,24 +80,43 @@ class AlbumController extends Controller
     {
         $inputs = $request->validate([
             'title' => 'required|string|max:255',
-            'base64_cover_pic' => 'base64image|base64dimensions:min_width=100,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
             'release_date' => 'required|date|max:10',
         ]);
-
         $album = Album::findOrFail($id);
 
         try {
             DB::transaction(function () use ($inputs, $album) {
-                if (isset($inputs['base64_cover_pic'])) {
-                    $imageData = explode(',', $inputs['base64_cover_pic'])[1];
-                    $imageExtension = explode('/', mime_content_type($inputs['base64_cover_pic']))[1];
-                    $filename = 'album_covers/'.Str::random(10).'.'.$imageExtension;
-                    Storage::disk('public')->put($filename, base64_decode($imageData));
-                    $inputs['cover_pic'] = $filename;
-                }
+                $album->update($inputs);
+            });
+        } catch (Exception $e) {   
+            return response()->json([
+                "message" => $e->getMessage()
+            ]);
+        }
+    }
+    public function updateCoverPic(Request $request, $id)
+    {
+        // dd($request);
+        $inputs = $request->validate([
+            'base64_cover_pic' => 'required|base64image|base64dimensions:min_width=64,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
+        ]);
+        $album = Album::findOrFail($id);
+
+        try {
+            DB::transaction(function () use ($inputs, $album) {
+                $imageData = explode(',', $inputs['base64_cover_pic'])[1];
+                $imageExtension = explode('/', mime_content_type($inputs['base64_cover_pic']))[1];
+                $filename = 'album_covers/'.Str::random(10).'.'.$imageExtension;
+                Storage::disk('public')->put($filename, base64_decode($imageData));
+                $inputs['cover_pic'] = $filename;
 
                 $album->update($inputs);
             });
+
+            return response()->json([
+                'message' => 'Album cover updated.',
+                'data' => $album
+            ]);
         } catch (Exception $e) {   
             return response()->json([
                 "message" => $e->getMessage()

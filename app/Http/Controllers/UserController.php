@@ -96,20 +96,20 @@ class UserController extends Controller
 
     public function updateProfilePic(Request $request)
     {
-        $input = $request->validate([
+        $inputs = $request->validate([
             'base64_profile_pic' => 'required|base64image|base64dimensions:min_width=64,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
         ]);
         $user = User::findOrFail($request->user()->id);
-        // dd($request);
+        
         try {
-            DB::transaction(function () use ($input, $user) {
-                $imageData = explode(',', $input['base64_profile_pic'])[1];
-                $imageExtension = explode('/', mime_content_type($input['base64_profile_pic']))[1];
+            DB::transaction(function () use ($inputs, $user) {
+                $imageData = explode(',', $inputs['base64_profile_pic'])[1];
+                $imageExtension = explode('/', mime_content_type($inputs['base64_profile_pic']))[1];
                 $filename = 'profile_pictures/'.Str::random(10).'.'.$imageExtension;
                 Storage::disk('public')->put($filename, base64_decode($imageData));
-                $input['profile_pic'] = $filename;
+                $inputs['profile_pic'] = $filename;
                 
-                $user->update($input);
+                $user->update($inputs);
             });
 
             return response()->json([

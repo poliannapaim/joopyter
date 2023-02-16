@@ -63,8 +63,8 @@ class TrackController extends Controller
     public function update(Request $request, $album_id, $track_id)
     {
         $inputs = $request->validate([
-            'number' => '|required|integer',
-            'title' => '|required|string|max:255'
+            'number' => 'required|integer',
+            'title' => 'required|string|max:255'
         ]);
         $track = Track::findOrFail($track_id);
         

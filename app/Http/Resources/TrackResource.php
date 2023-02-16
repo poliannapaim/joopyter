@@ -15,6 +15,7 @@ class TrackResource extends JsonResource
     public function toArray($request)
     {
         return [
+            'id' => $this->id,
             'number' => $this->number,
             'title' => $this->title
         ];

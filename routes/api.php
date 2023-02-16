@@ -6,6 +6,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AlbumController;
 use App\Http\Controllers\TrackController;
 
+// header('Access-Control-Allow-Origin: *');
+// header('Access-Control-Allow-Methods:  POST, GET, OPTIONS, PUT, DELETE');
+// header('Access-Control-Allow-Headers:  Content-Type, X-Auth-Token, Origin, Authorization');
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -46,6 +49,7 @@ Route::prefix('v2')->group(function () {
          * album routes
          */
         Route::resource('albums', AlbumController::class);
+        Route::put('albums/{id}/update-cover-pic', [AlbumController::class, 'updateCoverPic']);
 
         /**
          * tracks routes
