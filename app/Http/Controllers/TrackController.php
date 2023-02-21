@@ -20,18 +20,17 @@ class TrackController extends Controller
     public function store(Request $request, $album_id)
     {
         $inputs = $request->validate([
-            'number.*' => 'required|integer',
-            'title.*' => 'required|string|max:255',
+            '*.number' => 'required|integer',
+            '*.title' => 'required|string|max:255',
         ]);
-
         $album = Album::findOrFail($album_id);
-        
+
         try {
             DB::transaction(function () use ($inputs, $album) {
-                for($i = 0; $i < count($inputs['number']); $i++) {
+                foreach($inputs as $i) {
                     $album->tracks()->create([
-                        'number' => $inputs['number'][$i],
-                        'title' => $inputs['title'][$i]
+                        'number' => $i['number'],
+                        'title' => $i['title'],
                     ]);
                 }
             });

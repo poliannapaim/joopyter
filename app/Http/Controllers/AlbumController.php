@@ -18,9 +18,9 @@ class AlbumController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        return AlbumResource::collection(Album::orderBy('release_date', 'DESC')->paginate(20));
+        return AlbumResource::collection(Album::where('user_id', $request->user()->id)->orderBy('release_date', 'DESC')->paginate(20));
     }
 
     /**
@@ -96,7 +96,6 @@ class AlbumController extends Controller
     }
     public function updateCoverPic(Request $request, $id)
     {
-        // dd($request);
         $inputs = $request->validate([
             'base64_cover_pic' => 'required|base64image|base64dimensions:min_width=64,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
         ]);
