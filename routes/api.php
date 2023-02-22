@@ -56,7 +56,7 @@ Route::prefix('v2')->group(function () {
          */
         Route::get('albums/{album_id}/tracks/{track_id}', [TrackController::class, 'show']);
         Route::post('albums/{album_id}/tracks', [TrackController::class, 'store']);
-        Route::put('albums/{album_id}/tracks/{track_id}', [TrackController::class, 'update']);
+        Route::put('albums/{album_id}/tracks', [TrackController::class, 'update']);
         Route::delete('albums/{album_id}/tracks/{track_id}', [TrackController::class, 'destroy']);
 
         /**

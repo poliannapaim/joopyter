@@ -59,17 +59,26 @@ class TrackController extends Controller
      * @param  \App\Models\Track  $track
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $album_id, $track_id)
+    public function update(Request $request, $album_id)
     {
+        
         $inputs = $request->validate([
-            'number' => 'required|integer',
-            'title' => 'required|string|max:255'
+            '*.id' => 'required',
+            '*.number' => 'required|integer',
+            '*.title' => 'required|string|max:255',
         ]);
-        $track = Track::findOrFail($track_id);
+        $album = Album::findOrFail($album_id);
         
         try {
-            DB::transaction(function () use ($track, $inputs) {
-                $track->update($inputs);
+            DB::transaction(function () use ($inputs, $album) {
+                // $album->tracks()->update($inputs);
+                foreach($inputs as $i) {
+                    $album->tracks()->where('id', $i['id'])->update([
+                        'number' => $i['number'],
+                        'title' => $i['title']
+                    ]);
+                }
+                // dd('deu certo');
             });
         } catch (Exception $e) {
             return response()->json([
