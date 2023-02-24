@@ -43,8 +43,8 @@ Route::prefix('v2')->group(function () {
         Route::get('account', [UserController::class, 'show']);
         Route::put('account/update', [UserController::class, 'update']);
         Route::put('account/update-profile-pic', [UserController::class, 'updateProfilePic']);
+        Route::put('account/update-password', [UserController::class, 'changePassword']);
         Route::delete('account/delete', [UserController::class, 'destroy']);
-
         /**
          * album routes
          */

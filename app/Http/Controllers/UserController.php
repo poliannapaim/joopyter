@@ -182,4 +182,28 @@ class UserController extends Controller
     {
         $request->user()->tokens()->delete();
     }
+
+    public function changePassword(Request $request)
+    {
+        $inputs = $request->validate([
+            'old_password' => 'required|min:8',
+            'password' => 'required|confirmed|min:8'
+        ]);
+        $user = User::findOrFail($request->user()->id);
+
+        if (Hash::check($inputs['old_password'], $user->password)) {
+            try {
+                DB::transaction(function () use ($user, $inputs) {
+                    $user->update([
+                        'password' => Hash::make($inputs['password'])
+                    ]);
+                });
+            }
+            catch (Exception $e) {
+                return response()->json([
+                    'message' => $e->getMessage()
+                ]);
+            }
+        }
+    }
 }

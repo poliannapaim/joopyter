@@ -36,21 +36,28 @@ class AlbumController extends Controller
             'base64_cover_pic' => 'base64image|base64dimensions:min_width=100,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
             'release_date' => 'required|date|max:10',
         ]);
+
+        $album = 0;
         
         try {
-            DB::transaction(function () use ($inputs, $request) {
+            DB::transaction(function () use ($inputs, $request, &$album) {
                 $imageData = explode(',', $inputs['base64_cover_pic'])[1];
                 $imageExtension = explode('/', mime_content_type($inputs['base64_cover_pic']))[1];
                 $filename = 'album_covers/'.Str::random(10).'.'.$imageExtension;
                 Storage::disk('public')->put($filename, base64_decode($imageData));
                 $inputs['cover_pic'] = $filename;
 
-                $request->user()->albums()->create([
+                $album = $request->user()->albums()->create([
                     'title' => $inputs['title'],
                     'cover_pic' => $filename,
                     'release_date' => $inputs['release_date']
                 ]);
             });
+
+            return response()->json([
+                'message' => 'Album created',
+                'data' => $album
+            ]);
         } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
