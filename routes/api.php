@@ -54,6 +54,7 @@ Route::prefix('v2')->group(function () {
         /**
          * tracks routes
          */
+        Route::get('tracks', [TrackController::class, 'index']);
         Route::get('albums/{album_id}/tracks/{track_id}', [TrackController::class, 'show']);
         Route::post('albums/{album_id}/tracks', [TrackController::class, 'store']);
         Route::put('albums/{album_id}/tracks', [TrackController::class, 'update']);

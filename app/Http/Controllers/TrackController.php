@@ -11,6 +11,10 @@ use App\Http\Resources\TrackResource;
 
 class TrackController extends Controller
 {
+    public function index(Request $request)
+    {
+        return TrackResource::collection(Track::paginate(20));
+    }
     /**
      * Store a newly created resource in storage.
      *

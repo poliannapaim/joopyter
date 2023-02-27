@@ -73,7 +73,10 @@ class AlbumController extends Controller
      */
     public function show($id)
     {
-        return new AlbumResource(Album::findOrFail($id)->load('user')->load('tracks'));
+        $album = Album::findOrFail($id);
+        abort_unless($this->authorize('view', $album), 403);
+
+        return new AlbumResource($album->load('user')->load('tracks'));
     }
 
     /**
@@ -85,11 +88,13 @@ class AlbumController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $album = Album::findOrFail($id);
+        abort_unless($this->authorize('update', $album), 403);
+
         $inputs = $request->validate([
             'title' => 'required|string|max:255',
             'release_date' => 'required|date|max:10',
         ]);
-        $album = Album::findOrFail($id);
 
         try {
             DB::transaction(function () use ($inputs, $album) {
@@ -103,10 +108,12 @@ class AlbumController extends Controller
     }
     public function updateCoverPic(Request $request, $id)
     {
+        $album = Album::findOrFail($id);
+        abort_unless($this->authorize('update', $album), 403);
+
         $inputs = $request->validate([
             'base64_cover_pic' => 'required|base64image|base64dimensions:min_width=64,max_width=1000|base64mimes:jpg,jpeg,png|base64max:2048',
         ]);
-        $album = Album::findOrFail($id);
 
         try {
             DB::transaction(function () use ($inputs, $album) {
@@ -139,6 +146,7 @@ class AlbumController extends Controller
     public function destroy($id)
     {
         $album = Album::findOrFail($id);
+        abort_unless($this->authorize('delete', $album), 403);
 
         try {
             DB::transaction(function () use ($album) {
@@ -151,21 +159,22 @@ class AlbumController extends Controller
         }
     }
 
-    public function trashed()
+    public function trashed(Request $request)
     {
-        $albums = Album::onlyTrashed()->get();
+        $albums = $request->user()->albums()->onlyTrashed()->get();
 
         return response()->json([
             'data' => $albums
         ]);
     }
 
-    public function restore($id)
+    public function restore(Request $request, $id)
     {
         try {
-            DB::transaction(function () use ($id) {
+            DB::transaction(function () use ($request, $id) {
                 Album::withTrashed()
                     ->where('id', $id)
+                    ->where('user_id', $request->user()->id)
                     ->restore();
             });
         }
