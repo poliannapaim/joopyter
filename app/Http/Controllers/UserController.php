@@ -11,10 +11,15 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
+    public function hello()
+    {
+        return 'Hello World';
+    }
     /**
      * Store a newly created resource in storage.
      *

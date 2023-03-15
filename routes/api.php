@@ -25,6 +25,11 @@ use App\Http\Controllers\TrackController;
  */
 Route::prefix('v2')->group(function () {
     /**
+     * for testing api
+     */
+    Route::get('hello', [UserController::class, 'hello']);
+
+    /**
      * authentication routes
      */
     Route::post('register', [UserController::class, 'store']);
@@ -39,6 +44,7 @@ Route::prefix('v2')->group(function () {
         /**
          * user routes
          */
+        
         Route::get('user', [UserController::class, 'user']);
         Route::get('account', [UserController::class, 'show']);
         Route::put('account/update', [UserController::class, 'update']);
