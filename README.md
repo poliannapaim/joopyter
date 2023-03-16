@@ -12,7 +12,7 @@ um espaço para artistas independentes registrarem álbuns e músicas.
 - [x] desenvolvimento do backend utilizando o framework **Laravel/PHP** (RESTful API, banco de dados com MySQL)
 - [x] testagem das APIs utilizando o programa **Insomnia**
 - [x] desenvolvimento da interface para consumir as APIs utilizando a biblioteca **React/JavaScript** (apenas desktop)
-- [ ] criação de uma máquina virtual (VM) na AWS para deploy da aplicação
+- [x] criação de uma máquina virtual (VM) na AWS para deploy da aplicação
 
 ---
 
